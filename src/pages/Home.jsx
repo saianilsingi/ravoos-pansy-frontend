@@ -16,8 +16,8 @@ export default function Home() {
   }, []);
 
   const featured = products.slice(0, 8);
-  const foodItems = products.filter(p => p.category.slug === "food").slice(0, 4);
-  const gamingItems = products.filter(p => p.category.slug === "gaming").slice(0, 4);
+  const foodItems = products.filter(p => p.category?.slug === "food").slice(0, 4);
+  const gamingItems = products.filter(p => p.category?.slug === "gaming").slice(0, 4);
 
   if (loading) {
     return (

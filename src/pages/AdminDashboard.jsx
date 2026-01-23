@@ -17,7 +17,12 @@ export default function AdminDashboard() {
   // Load products & categories
   useEffect(() => {
     fetchProducts();
-    api.get("categories/").then(res => setCategories(res.data));
+    api.get("categories/")
+      .then(res => setCategories(res.data))
+      .catch(err => {
+        console.error("Failed to load categories:", err);
+        alert("Failed to load categories. Please refresh the page.");
+      });
   }, []);
 
   const fetchProducts = async () => {
@@ -60,7 +65,7 @@ export default function AdminDashboard() {
       name: p.name,
       description: p.description || "",
       price: p.price,
-      category_id: p.category.id,
+      category_id: p.category?.id || "",
       image: p.image || "",
     });
   };
@@ -179,7 +184,7 @@ export default function AdminDashboard() {
                 <h4 className="font-medium">{p.name}</h4>
                 <p className="font-semibold">₹{p.price}</p>
                 <p className="text-sm text-gray-500">
-                  {p.category.name}
+                  {p.category?.name || "No Category"}
                 </p>
               </div>
 

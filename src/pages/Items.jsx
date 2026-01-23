@@ -142,7 +142,7 @@ export default function Items() {
           {products.map(product => {
   const imageSrc =
     product.image ||
-    CATEGORY_FALLBACK_IMAGES[product.category.slug] ||
+    CATEGORY_FALLBACK_IMAGES[product.category?.slug] ||
     CATEGORY_FALLBACK_IMAGES.default;
 
   return (
@@ -189,7 +189,7 @@ export default function Items() {
       </p>
 
       <p style={{ fontSize: "12px", color: "#777" }}>
-        {product.category.name}
+        {product.category?.name || "No Category"}
       </p>
 
       <button
