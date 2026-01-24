@@ -38,12 +38,27 @@ export default function AdminDashboard() {
   // Add or Update product
   const saveProduct = async () => {
     try {
-      if (editing) {
-        await api.put(`admin/products/${editing}/`, form);
-      } else {
-        await api.post("admin/products/", form);
+      // 🔒 frontend validation (optional but good)
+      if (!form.name || !form.price || !form.category_id) {
+        alert("Name, price, and category are required");
+        return;
       }
-
+  
+      // ✅ MAP frontend → backend schema
+      const payload = {
+        name: form.name.trim(),
+        description: form.description,
+        price: Number(form.price),
+        category: Number(form.category_id),
+        image: form.image,
+      };
+  
+      if (editing) {
+        await api.put(`admin/products/${editing}/`, payload);
+      } else {
+        await api.post("admin/products/", payload);
+      }
+  
       setForm({
         name: "",
         description: "",
@@ -53,8 +68,9 @@ export default function AdminDashboard() {
       });
       setEditing(null);
       fetchProducts();
-    } catch {
-      alert("Failed to save product");
+    } catch (err) {
+      console.error("BACKEND ERROR:", err.response?.data);
+      alert(JSON.stringify(err.response?.data));
     }
   };
 
