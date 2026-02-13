@@ -1,217 +1,189 @@
 import { useEffect, useState, useContext } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import api from "../api/axios";
 import { AuthContext } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useToast } from "../context/ToastContext";
+import { useCart } from "../context/CartContext";
+import useDebounce from "../hooks/useDebounce";
+import { SkeletonGrid } from "../components/Skeleton";
 
-
-// ----------------------------
-// Category-based fallback images
-// ----------------------------
-const CATEGORY_FALLBACK_IMAGES = {
-  food: "https://source.unsplash.com/400x300/?food",
-  drinks: "https://source.unsplash.com/400x300/?drink",
-  clothes: "https://source.unsplash.com/400x300/?fashion",
-  gaming: "https://source.unsplash.com/400x300/?gaming",
-  default: "https://dummyimage.com/400x300/e0e0e0/555&text=No+Image",
-};
+const FALLBACK_IMAGE =
+  "https://dummyimage.com/400x300/e0e0e0/555&text=No+Image";
 
 export default function Items() {
+  const [searchParams] = useSearchParams();
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
-  const [activeCategory, setActiveCategory] = useState("");
+  const [activeCategory, setActiveCategory] = useState(
+    searchParams.get("category") || ""
+  );
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const debouncedSearch = useDebounce(search, 400);
 
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
+  const toast = useToast();
+  const { addToCart } = useCart();
 
-  // ----------------------------
-  // Add to cart
-  // ----------------------------
-  const handleAddToCart = async (productId) => {
-    if (!user) {
-      navigate("/login");
-      return;
-    }
-
-    if (user.role !== "user") {
-      alert("Admins cannot purchase products");
-      return;
-    }
-
-    try {
-      await api.post("cart/add/", {
-        product_id: productId,
-        quantity: 1,
-      });
-      alert("Added to cart");
-    } catch (err) {
-      alert("Failed to add to cart");
-    }
-  };
-
-  // ----------------------------
-  // Theme switching
-  // ----------------------------
   useEffect(() => {
-    if (activeCategory === "food") {
-      document.body.style.background = "#fff3e0";
-    } else if (activeCategory === "drinks") {
-      document.body.style.background = "#e3f2fd";
-    } else if (activeCategory === "clothes") {
-      document.body.style.background = "#fce4ec";
-    } else if (activeCategory === "gaming") {
-      document.body.style.background = "#121212";
-    } else {
-      document.body.style.background = "#ffffff";
-    }
-  }, [activeCategory]);
-
-  // ----------------------------
-  // Fetch categories
-  // ----------------------------
-  useEffect(() => {
-    api.get("categories/")
-      .then(res => setCategories(res.data))
-      .catch(err => console.error(err));
+    document.title = "Items | Ravoos Pansy";
   }, []);
 
-  // ----------------------------
-  // Fetch products
-  // ----------------------------
+  // Fetch categories
   useEffect(() => {
+    api
+      .get("categories/")
+      .then((res) => setCategories(res.data))
+      .catch(() => toast("Failed to load categories", "error"));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Fetch products (debounced search)
+  useEffect(() => {
+    let cancelled = false;
     setLoading(true);
 
     let url = "products/";
     const params = [];
 
     if (activeCategory) params.push(`category=${activeCategory}`);
-    if (search) params.push(`search=${search}`);
+    if (debouncedSearch) params.push(`search=${debouncedSearch}`);
 
     if (params.length) {
       url += "?" + params.join("&");
     }
 
-    api.get(url)
-      .then(res => setProducts(res.data))
-      .catch(err => console.error(err))
-      .finally(() => setLoading(false));
-  }, [activeCategory, search]);
+    api
+      .get(url)
+      .then((res) => {
+        if (!cancelled) setProducts(res.data);
+      })
+      .catch(() => {
+        if (!cancelled) toast("Failed to load products", "error");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCategory, debouncedSearch]);
+
+  const handleAddToCart = async (e, productId) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+
+    if (user.role !== "user") {
+      toast("Admins cannot purchase products", "error");
+      return;
+    }
+
+    const success = await addToCart(productId);
+    toast(success ? "Added to cart!" : "Failed to add to cart", success ? "success" : "error");
+  };
 
   return (
-    <div>
-      <h2>Items</h2>
+    <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+      <h2 className="text-2xl font-bold">Items</h2>
 
+      {/* SEARCH */}
       <input
         type="text"
         placeholder="Search items..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        style={{ marginBottom: "10px" }}
+        className="w-full border border-stone-300 dark:border-stone-700
+                   bg-white dark:bg-stone-900
+                   rounded-lg px-4 py-2.5
+                   focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-400
+                   placeholder:text-stone-400 dark:placeholder:text-stone-500
+                   transition-colors"
       />
 
-      <div style={{ marginBottom: "20px" }}>
-        <button onClick={() => setActiveCategory("")}>All</button>
+      {/* CATEGORY FILTERS */}
+      <div className="flex gap-2 flex-wrap">
+        <button
+          onClick={() => setActiveCategory("")}
+          className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+            activeCategory === ""
+              ? "bg-amber-600 dark:bg-amber-500 text-white shadow-md"
+              : "bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:border-amber-400 dark:hover:border-amber-600"
+          }`}
+        >
+          All
+        </button>
 
-        {categories.map(cat => (
+        {categories.map((cat) => (
           <button
             key={cat.id}
             onClick={() => setActiveCategory(cat.slug)}
-            style={{
-              marginLeft: "8px",
-              fontWeight: activeCategory === cat.slug ? "bold" : "normal"
-            }}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              activeCategory === cat.slug
+                ? "bg-amber-600 dark:bg-amber-500 text-white shadow-md"
+                : "bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:border-amber-400 dark:hover:border-amber-600"
+            }`}
           >
             {cat.name}
           </button>
         ))}
       </div>
 
+      {/* PRODUCTS */}
       {loading ? (
-        <p>Loading...</p>
+        <SkeletonGrid />
       ) : products.length === 0 ? (
-        <p>No products found</p>
+        <div className="text-center py-16">
+          <div className="text-5xl mb-4">🔍</div>
+          <h3 className="text-xl font-semibold mb-2">No products found</h3>
+          <p className="text-stone-500 dark:text-stone-400">
+            Try a different search or category.
+          </p>
+        </div>
       ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-            gap: "16px"
-          }}
-        >
-          {products.map(product => {
-  const imageSrc =
-    product.image ||
-    CATEGORY_FALLBACK_IMAGES[product.category?.slug] ||
-    CATEGORY_FALLBACK_IMAGES.default;
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+          {products.map((product) => (
+            <Link
+              to={`/items/${product.id}`}
+              key={product.id}
+              className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800
+                         rounded-xl overflow-hidden
+                         hover:shadow-lg hover:border-amber-300 dark:hover:border-amber-700
+                         transition-all group"
+            >
+              <img
+                src={product.image || FALLBACK_IMAGE}
+                alt={product.name}
+                className="w-full h-40 object-cover bg-stone-100 dark:bg-stone-800"
+                onError={(e) => {
+                  e.target.src = FALLBACK_IMAGE;
+                }}
+              />
 
-  return (
-    <div
-      key={product.id}
-      style={{
-        border: "1px solid #ddd",
-        padding: "10px",
-        borderRadius: "10px",
-        background: "#fff",
-        transition: "transform 0.2s, box-shadow 0.2s",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "translateY(-4px)";
-        e.currentTarget.style.boxShadow = "0 6px 18px rgba(0,0,0,0.12)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "none";
-        e.currentTarget.style.boxShadow = "none";
-      }}
-    >
-      {/* -------- IMAGE -------- */}
-      <img
-        src={imageSrc}
-        alt={product.name}
-        style={{
-          width: "100%",
-          height: "160px",
-          objectFit: "cover",
-          borderRadius: "8px",
-          marginBottom: "8px",
-          background: "#f5f5f5",
-        }}
-        onError={(e) => {
-          e.target.src = CATEGORY_FALLBACK_IMAGES.default;
-        }}
-      />
+              <div className="p-3 space-y-1">
+                <h4 className="font-medium text-sm truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                  {product.name}
+                </h4>
+                <p className="font-semibold">₹{product.price}</p>
+                <p className="text-xs text-stone-500 dark:text-stone-400">
+                  {product.category?.name || "No Category"}
+                </p>
 
-      {/* -------- INFO -------- */}
-      <h4 style={{ margin: "6px 0" }}>{product.name}</h4>
-
-      <p style={{ fontWeight: "bold", margin: "4px 0" }}>
-        ₹{product.price}
-      </p>
-
-      <p style={{ fontSize: "12px", color: "#777" }}>
-        {product.category?.name || "No Category"}
-      </p>
-
-      <button
-        onClick={() => handleAddToCart(product.id)}
-        style={{
-          marginTop: "8px",
-          width: "100%",
-          padding: "8px",
-          borderRadius: "6px",
-          border: "none",
-          background: "#1976d2",
-          color: "white",
-          cursor: "pointer",
-        }}
-      >
-        Add to Cart
-      </button>
-    </div>
-  );
-})}
-
-
+                <button
+                  onClick={(e) => handleAddToCart(e, product.id)}
+                  className="w-full mt-2 bg-amber-600 dark:bg-amber-500 text-white py-2 rounded-lg
+                             text-sm font-medium hover:bg-amber-700 dark:hover:bg-amber-400 transition-colors"
+                >
+                  Add to Cart
+                </button>
+              </div>
+            </Link>
+          ))}
         </div>
       )}
     </div>

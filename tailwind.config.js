@@ -4,12 +4,9 @@ export default {
     "./index.html",
     "./src/**/*.{js,jsx}",
   ],
+  darkMode: "selector",
   theme: {
-    extend: {
-      colors: {
-        brand: "#4f46e5", // indigo-600 style
-      },
-    },
+    extend: {},
   },
   plugins: [],
 };
