@@ -1,40 +1,40 @@
 import { useContext, useEffect, useRef } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 
 export default function UserOnlyRoute({ children }) {
   const { user, loading } = useContext(AuthContext);
   const navigate = useNavigate();
+  const toast = useToast();
   const hasHandled = useRef(false);
 
-  // 🔑 derived states (no hooks here)
   const isGuest = !loading && !user;
   const isAdmin = !loading && user && user.role !== "user";
 
-  // ✅ side-effects ALWAYS declared at top level
   useEffect(() => {
     if (isAdmin && !hasHandled.current) {
       hasHandled.current = true;
-      alert("Cart is only available for users. Admins cannot purchase items.");
+      toast("This page is only available for users", "info");
       navigate("/");
     }
-  }, [isAdmin, navigate]);
+  }, [isAdmin, navigate, toast]);
 
-  // ⏳ still checking auth
   if (loading) {
-    return <p>Loading...</p>;
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <p className="text-stone-400 dark:text-stone-500">Loading...</p>
+      </div>
+    );
   }
 
-  // Guest → login
   if (isGuest) {
     return <Navigate to="/login" />;
   }
 
-  // Admin → redirect already triggered by effect
   if (isAdmin) {
     return null;
   }
 
-  // User → allowed
   return children;
 }

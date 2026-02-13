@@ -1,13 +1,15 @@
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
+import { useToast } from "../context/ToastContext";
 import api from "../api/axios";
 
 export default function Profile() {
-  const { user, logout } = useContext(AuthContext);
+  const { user, logout, refreshUser } = useContext(AuthContext);
   const navigate = useNavigate();
+  const toast = useToast();
 
-  const [mode, setMode] = useState("view"); // view | editProfile | addresses
+  const [mode, setMode] = useState("view");
   const [name, setName] = useState(user?.name || "");
   const [addresses, setAddresses] = useState([]);
   const [editingAddress, setEditingAddress] = useState(null);
@@ -23,24 +25,40 @@ export default function Profile() {
     is_default: false,
   });
 
-  /* ---------------- GUEST VIEW ---------------- */
+  useEffect(() => {
+    document.title = "Profile | Ravoos Pansy";
+  }, []);
+
+  // Load addresses - must be before any early return to respect hooks rules
+  useEffect(() => {
+    if (!user || user.role !== "user") return;
+    api.get("auth/addresses/")
+      .then((res) => setAddresses(res.data))
+      .catch(() => {});
+  }, [user]);
+
+  // Guest view
   if (!user) {
     return (
-      <div className="max-w-md mx-auto px-4 py-16 text-center bg-white border rounded-xl shadow-sm">
+      <div className="max-w-md mx-auto px-4 py-16 text-center bg-white dark:bg-stone-900
+                      border border-stone-200 dark:border-stone-800 rounded-xl shadow-sm">
+        <div className="text-5xl mb-4">👤</div>
         <h2 className="text-2xl font-semibold mb-2">Welcome</h2>
-        <p className="text-gray-600 mb-6">
+        <p className="text-stone-500 dark:text-stone-400 mb-6">
           Please login or signup to manage your account
         </p>
         <div className="flex justify-center gap-4">
           <Link
             to="/login"
-            className="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700"
+            className="bg-amber-600 dark:bg-amber-500 text-white px-5 py-2 rounded-lg
+                       hover:bg-amber-700 dark:hover:bg-amber-400 transition-colors"
           >
             Login
           </Link>
           <Link
             to="/signup"
-            className="border border-gray-300 px-5 py-2 rounded-lg hover:bg-gray-50"
+            className="border border-stone-300 dark:border-stone-700 px-5 py-2 rounded-lg
+                       hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
           >
             Signup
           </Link>
@@ -49,27 +67,17 @@ export default function Profile() {
     );
   }
 
-  /* ---------------- LOAD ADDRESSES (USER ONLY) ---------------- */
-  useEffect(() => {
-    if (user.role === "user") {
-      api.get("auth/addresses/")
-        .then(res => setAddresses(res.data))
-        .catch(() => {});
-    }
-  }, [user]);
-
-  /* ---------------- UPDATE NAME ---------------- */
   const updateName = async () => {
     try {
-      await api.put("profile/", { name });
-      alert("Name updated");
+      await api.put("auth/me/", { name });
+      await refreshUser();
+      toast("Name updated!", "success");
       setMode("view");
     } catch {
-      alert("Failed to update name");
+      toast("Failed to update name", "error");
     }
   };
 
-  /* ---------------- ADDRESS HANDLERS ---------------- */
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -96,8 +104,9 @@ export default function Profile() {
 
       const res = await api.get("auth/addresses/");
       setAddresses(res.data);
+      toast("Address saved!", "success");
     } catch {
-      alert("Failed to save address");
+      toast("Failed to save address", "error");
     }
   };
 
@@ -108,26 +117,33 @@ export default function Profile() {
 
   const deleteAddress = async (id) => {
     if (!window.confirm("Delete this address?")) return;
-    await api.delete(`auth/addresses/${id}/delete/`);
-    setAddresses(addresses.filter(a => a.id !== id));
+    try {
+      await api.delete(`auth/addresses/${id}/delete/`);
+      setAddresses(addresses.filter((a) => a.id !== id));
+      toast("Address deleted", "success");
+    } catch {
+      toast("Failed to delete address", "error");
+    }
   };
 
-  /* ---------------- MAIN RENDER ---------------- */
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-
       {/* VIEW MODE */}
       {mode === "view" && (
-        <div className="bg-white border rounded-xl p-6 shadow-sm space-y-4">
-          <h2 className="text-2xl font-semibold">Profile</h2>
+        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800
+                        rounded-xl p-6 shadow-sm space-y-4">
+          <h2 className="text-2xl font-bold">Profile</h2>
 
-          <p><b>Name:</b> {user.name}</p>
-          <p><b>Email:</b> {user.email}</p>
+          <div className="text-stone-600 dark:text-stone-400 space-y-1">
+            <p><b className="text-stone-900 dark:text-stone-100">Name:</b> {user.name}</p>
+            <p><b className="text-stone-900 dark:text-stone-100">Email:</b> {user.email}</p>
+          </div>
 
           <div className="flex flex-wrap gap-3 pt-2">
             <button
               onClick={() => setMode("editProfile")}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
+              className="bg-amber-600 dark:bg-amber-500 text-white px-4 py-2 rounded-lg
+                         hover:bg-amber-700 dark:hover:bg-amber-400 transition-colors"
             >
               Edit Profile
             </button>
@@ -136,14 +152,16 @@ export default function Profile() {
               <>
                 <button
                   onClick={() => setMode("addresses")}
-                  className="border px-4 py-2 rounded-lg hover:bg-gray-50"
+                  className="border border-stone-300 dark:border-stone-700 px-4 py-2 rounded-lg
+                             hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
                 >
                   Manage Addresses
                 </button>
 
                 <button
                   onClick={() => navigate("/orders")}
-                  className="border px-4 py-2 rounded-lg hover:bg-gray-50"
+                  className="border border-stone-300 dark:border-stone-700 px-4 py-2 rounded-lg
+                             hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
                 >
                   My Orders
                 </button>
@@ -153,7 +171,8 @@ export default function Profile() {
             {user.role === "admin" && (
               <button
                 onClick={() => navigate("/admin-panel")}
-                className="border px-4 py-2 rounded-lg hover:bg-gray-50"
+                className="border border-stone-300 dark:border-stone-700 px-4 py-2 rounded-lg
+                           hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
               >
                 Admin Dashboard
               </button>
@@ -161,7 +180,7 @@ export default function Profile() {
 
             <button
               onClick={logout}
-              className="text-red-500 hover:underline ml-auto"
+              className="text-red-500 dark:text-red-400 hover:underline ml-auto"
             >
               Logout
             </button>
@@ -171,25 +190,29 @@ export default function Profile() {
 
       {/* EDIT PROFILE */}
       {mode === "editProfile" && (
-        <div className="bg-white border rounded-xl p-6 shadow-sm space-y-4">
-          <h3 className="text-xl font-semibold">Edit Name</h3>
+        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800
+                        rounded-xl p-6 shadow-sm space-y-4">
+          <h3 className="text-xl font-bold">Edit Name</h3>
 
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full border rounded-lg px-4 py-2"
+            className="w-full border border-stone-300 dark:border-stone-700
+                       bg-white dark:bg-stone-900 rounded-lg px-4 py-2 transition-colors"
           />
 
           <div className="flex gap-3">
             <button
               onClick={updateName}
-              className="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700"
+              className="bg-amber-600 dark:bg-amber-500 text-white px-5 py-2 rounded-lg
+                         hover:bg-amber-700 dark:hover:bg-amber-400 transition-colors"
             >
               Save
             </button>
             <button
               onClick={() => setMode("view")}
-              className="border px-5 py-2 rounded-lg hover:bg-gray-50"
+              className="border border-stone-300 dark:border-stone-700 px-5 py-2 rounded-lg
+                         hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
             >
               Cancel
             </button>
@@ -199,27 +222,29 @@ export default function Profile() {
 
       {/* ADDRESS MANAGEMENT */}
       {mode === "addresses" && user.role === "user" && (
-        <div className="bg-white border rounded-xl p-6 shadow-sm space-y-6">
-          <h3 className="text-xl font-semibold">My Addresses</h3>
+        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800
+                        rounded-xl p-6 shadow-sm space-y-6">
+          <h3 className="text-xl font-bold">My Addresses</h3>
 
-          {addresses.map(addr => (
+          {addresses.map((addr) => (
             <div
               key={addr.id}
-              className="border rounded-lg p-3 flex justify-between items-center"
+              className="border border-stone-200 dark:border-stone-700 rounded-lg p-3
+                         flex justify-between items-center gap-3"
             >
-              <p className="text-sm">
+              <p className="text-sm min-w-0 truncate">
                 {addr.full_name}, {addr.city}
               </p>
-              <div className="flex gap-3 text-sm">
+              <div className="flex gap-3 text-sm shrink-0">
                 <button
                   onClick={() => editAddress(addr)}
-                  className="text-indigo-600 hover:underline"
+                  className="text-amber-600 dark:text-amber-400 hover:underline"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => deleteAddress(addr.id)}
-                  className="text-red-500 hover:underline"
+                  className="text-red-500 dark:text-red-400 hover:underline"
                 >
                   Delete
                 </button>
@@ -232,27 +257,32 @@ export default function Profile() {
               {editingAddress ? "Edit Address" : "Add Address"}
             </h4>
 
-            {Object.keys(form).filter(k => k !== "is_default").map(key => (
-              <input
-                key={key}
-                name={key}
-                placeholder={key.replace("_", " ")}
-                value={form[key]}
-                onChange={handleChange}
-                className="w-full border rounded-lg px-4 py-2"
-              />
-            ))}
+            {Object.keys(form)
+              .filter((k) => k !== "is_default")
+              .map((key) => (
+                <input
+                  key={key}
+                  name={key}
+                  placeholder={key.replace("_", " ")}
+                  value={form[key]}
+                  onChange={handleChange}
+                  className="w-full border border-stone-300 dark:border-stone-700
+                             bg-white dark:bg-stone-900 rounded-lg px-4 py-2 transition-colors"
+                />
+              ))}
 
             <div className="flex gap-3">
               <button
                 onClick={saveAddress}
-                className="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700"
+                className="bg-amber-600 dark:bg-amber-500 text-white px-5 py-2 rounded-lg
+                           hover:bg-amber-700 dark:hover:bg-amber-400 transition-colors"
               >
                 {editingAddress ? "Update Address" : "Add Address"}
               </button>
               <button
                 onClick={() => setMode("view")}
-                className="border px-5 py-2 rounded-lg hover:bg-gray-50"
+                className="border border-stone-300 dark:border-stone-700 px-5 py-2 rounded-lg
+                           hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
               >
                 Back
               </button>

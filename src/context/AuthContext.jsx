@@ -1,27 +1,25 @@
 import { createContext, useState, useEffect } from "react";
 import api from "../api/axios";
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // 🔑 NEW
+  const [loading, setLoading] = useState(() => !!localStorage.getItem("token"));
 
   useEffect(() => {
     const token = localStorage.getItem("token");
+    if (!token) return;
 
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-
-    api.get("auth/me/")
-      .then(res => setUser(res.data))
+    api
+      .get("auth/me/")
+      .then((res) => setUser(res.data))
       .catch(() => {
         localStorage.removeItem("token");
         setUser(null);
       })
-      .finally(() => setLoading(false)); // 🔑 DONE
+      .finally(() => setLoading(false));
   }, []);
 
   const login = (data) => {
@@ -34,8 +32,17 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  const refreshUser = async () => {
+    try {
+      const res = await api.get("auth/me/");
+      setUser(res.data);
+    } catch {
+      // ignore
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

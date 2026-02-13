@@ -1,101 +1,56 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Home from "./pages/Home";
-import Items from "./pages/Items";
-import Cart from "./pages/Cart";
-import Profile from "./pages/Profile";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import Checkout from "./pages/Checkout";
-import Orders from "./pages/Orders";
-import UserOnlyRoute from "./components/UserOnlyRoute";
-import AdminRoute from "./components/AdminRoute";
-import AdminDashboard from "./pages/AdminDashboard"
 import Layout from "./components/Layout";
+import AdminRoute from "./components/AdminRoute";
+import UserOnlyRoute from "./components/UserOnlyRoute";
 
+const Home = lazy(() => import("./pages/Home"));
+const Items = lazy(() => import("./pages/Items"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const Cart = lazy(() => import("./pages/Cart"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const Orders = lazy(() => import("./pages/Orders"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const Login = lazy(() => import("./pages/Login"));
+const Signup = lazy(() => import("./pages/Signup"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+function PageLoader() {
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="text-stone-400 dark:text-stone-500">Loading...</div>
+    </div>
+  );
+}
 
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          {/* Public pages */}
+          <Route path="/" element={<Layout><Home /></Layout>} />
+          <Route path="/items" element={<Layout><Items /></Layout>} />
+          <Route path="/items/:id" element={<Layout><ProductDetail /></Layout>} />
+          <Route path="/profile" element={<Layout><Profile /></Layout>} />
 
-        {/* PUBLIC PAGES WITH LAYOUT */}
-        <Route
-          path="/"
-          element={
-            <Layout>
-              <Home />
-            </Layout>
-          }
-        />
+          {/* User-only pages */}
+          <Route path="/cart" element={<UserOnlyRoute><Layout><Cart /></Layout></UserOnlyRoute>} />
+          <Route path="/checkout" element={<UserOnlyRoute><Layout><Checkout /></Layout></UserOnlyRoute>} />
+          <Route path="/orders" element={<UserOnlyRoute><Layout><Orders /></Layout></UserOnlyRoute>} />
 
-        <Route
-          path="/items"
-          element={
-            <Layout>
-              <Items />
-            </Layout>
-          }
-        />
+          {/* Admin-only */}
+          <Route path="/admin-panel" element={<AdminRoute><Layout><AdminDashboard /></Layout></AdminRoute>} />
 
-        {/* USER-ONLY PAGE */}
-        <Route
-          path="/cart"
-          element={
-            <UserOnlyRoute>
-              <Layout>
-                <Cart />
-              </Layout>
-            </UserOnlyRoute>
-          }
-        />
+          {/* Auth pages (no layout) */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
 
-        <Route
-          path="/profile"
-          element={
-            <Layout>
-              <Profile />
-            </Layout>
-          }
-        />
-        <Route
-          path="/checkout"
-            element={
-              <UserOnlyRoute>
-                <Layout>
-                  <Checkout />
-                </Layout>
-              </UserOnlyRoute>
-          }
-        />
-
-        <Route
-        path="/orders"
-            element={
-            <UserOnlyRoute>
-              <Layout>
-                <Orders />
-              </Layout>
-            </UserOnlyRoute>
-          }
-        />
-
-<Route
-  path="/admin-panel"
-  element={
-    <AdminRoute>
-      <Layout>
-        <AdminDashboard />
-      </Layout>
-    </AdminRoute>
-  }
-/>
-
-
-        {/* AUTH PAGES (NO NAVBAR) */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-
-      </Routes>
+          {/* 404 catch-all */}
+          <Route path="*" element={<Layout><NotFound /></Layout>} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

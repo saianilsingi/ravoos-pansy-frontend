@@ -2,7 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Global defaults */
+/* Body theme defaults */
 body {
-  @apply bg-gray-50 text-gray-800;
+  @apply bg-stone-50 text-stone-900 dark:bg-stone-950 dark:text-stone-50;
+  transition: background-color 0.25s, color 0.25s;
+}
+
+/* Toast slide-in animation */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-toast-in {
+  animation: toast-in 0.2s ease-out;
 }
