@@ -104,6 +104,7 @@ export default function ProductDetail() {
           alt={product.name}
           className="w-full h-60 sm:h-80 object-cover rounded-xl bg-stone-100 dark:bg-stone-800"
           onError={(e) => {
+            e.target.onerror = null;
             e.target.src = FALLBACK_IMAGE;
           }}
         />

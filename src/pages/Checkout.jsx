@@ -12,6 +12,7 @@ export default function Checkout() {
   const [cartItems, setCartItems] = useState([]);
   const [bill, setBill] = useState(null);
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   const toast = useToast();
   const { refreshCart } = useCart();
@@ -71,7 +72,12 @@ export default function Checkout() {
       setError("Please select address");
       return;
     }
+    if (cartItems.length === 0) {
+      setError("Your cart is empty");
+      return;
+    }
 
+    setSubmitting(true);
     try {
       const res = await api.post("orders/checkout/", {
         address_id: selectedAddress,
@@ -82,6 +88,8 @@ export default function Checkout() {
       refreshCart();
     } catch (err) {
       setError(err.response?.data?.error || "Checkout failed");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -218,10 +226,12 @@ export default function Checkout() {
       {/* CONFIRM */}
       <button
         onClick={handleCheckout}
+        disabled={submitting}
         className="w-full bg-amber-600 dark:bg-amber-500 text-white py-3 rounded-lg font-semibold
-                   hover:bg-amber-700 dark:hover:bg-amber-400 shadow-md hover:shadow-lg transition-all"
+                   hover:bg-amber-700 dark:hover:bg-amber-400 shadow-md hover:shadow-lg transition-all
+                   disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Confirm Order
+        {submitting ? "Placing Order..." : "Confirm Order"}
       </button>
     </div>
   );

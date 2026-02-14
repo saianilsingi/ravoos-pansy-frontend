@@ -208,7 +208,10 @@ export default function AdminDashboard() {
 
           {editing && (
             <button
-              onClick={() => setEditing(null)}
+              onClick={() => {
+                setEditing(null);
+                setForm({ name: "", description: "", price: "", category_id: "", image: "" });
+              }}
               className="border border-stone-300 dark:border-stone-700 px-6 py-2 rounded-lg
                          hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
             >

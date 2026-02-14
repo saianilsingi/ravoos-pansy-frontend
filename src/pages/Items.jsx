@@ -161,6 +161,7 @@ export default function Items() {
                 alt={product.name}
                 className="w-full h-40 object-cover bg-stone-100 dark:bg-stone-800"
                 onError={(e) => {
+                  e.target.onerror = null;
                   e.target.src = FALLBACK_IMAGE;
                 }}
               />
