@@ -4,6 +4,20 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "../context/ToastContext";
 import { useCart } from "../context/CartContext";
 
+function loadRazorpayScript() {
+  return new Promise((resolve) => {
+    if (window.Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
 export default function Checkout() {
   const [addresses, setAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(null);
@@ -78,19 +92,68 @@ export default function Checkout() {
     }
 
     setSubmitting(true);
+    setError("");
+
+    // Step 1: Create payment intent
+    let intentData;
     try {
-      const res = await api.post("orders/checkout/", {
+      const res = await api.post("payments/create-intent/", {
         address_id: selectedAddress,
         coupon: appliedCoupon?.code || null,
       });
-
-      setBill(res.data);
-      refreshCart();
+      intentData = res.data;
     } catch (err) {
-      setError(err.response?.data?.error || "Checkout failed");
-    } finally {
+      setError(err.response?.data?.error || "Failed to initiate payment");
       setSubmitting(false);
+      return;
     }
+
+    // Step 2: Load Razorpay script
+    const loaded = await loadRazorpayScript();
+    if (!loaded) {
+      toast("Failed to load payment gateway", "error");
+      setSubmitting(false);
+      return;
+    }
+
+    // Step 3: Open Razorpay checkout
+    const options = {
+      key: intentData.razorpay_key,
+      amount: Math.round(parseFloat(intentData.amount) * 100),
+      currency: intentData.currency,
+      order_id: intentData.razorpay_order_id,
+      name: "Ravoos Pansy",
+      description: "Order Payment",
+      handler: async (response) => {
+        // Step 4: Verify payment
+        try {
+          const verifyRes = await api.post("payments/verify/", {
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+          });
+          setBill(verifyRes.data);
+          refreshCart();
+        } catch (err) {
+          toast(err.response?.data?.error || "Payment verification failed", "error");
+        } finally {
+          setSubmitting(false);
+        }
+      },
+      modal: {
+        ondismiss: () => {
+          toast("Payment cancelled", "error");
+          setSubmitting(false);
+        },
+      },
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.on("payment.failed", () => {
+      toast("Payment failed. Please try again.", "error");
+      setSubmitting(false);
+    });
+    rzp.open();
   };
 
   if (bill) {
@@ -231,7 +294,7 @@ export default function Checkout() {
                    hover:bg-amber-700 dark:hover:bg-amber-400 shadow-md hover:shadow-lg transition-all
                    disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {submitting ? "Placing Order..." : "Confirm Order"}
+        {submitting ? "Processing..." : `Pay ₹${total.toFixed(2)}`}
       </button>
     </div>
   );
