@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useToast } from "../context/ToastContext";
 import api from "../api/axios";
+import StarRating from "../components/StarRating";
 
 export default function AdminDashboard() {
   const [products, setProducts] = useState([]);
@@ -38,6 +39,7 @@ export default function AdminDashboard() {
     document.title = "Admin Dashboard | Ravoos Pansy";
     fetchProducts();
     fetchCoupons();
+    fetchReviews();
     api
       .get("categories/")
       .then((res) => setCategories(res.data))
@@ -169,6 +171,29 @@ export default function AdminDashboard() {
       fetchCoupons();
     } catch {
       toast("Failed to delete coupon", "error");
+    }
+  };
+
+  // Reviews state
+  const [reviews, setReviews] = useState([]);
+
+  const fetchReviews = async () => {
+    try {
+      const res = await api.get("admin/reviews/");
+      setReviews(res.data.results || res.data);
+    } catch {
+      toast("Failed to load reviews", "error");
+    }
+  };
+
+  const deleteReview = async (id) => {
+    if (!window.confirm("Delete this review?")) return;
+    try {
+      await api.delete(`admin/reviews/${id}/delete/`);
+      toast("Review deleted", "success");
+      fetchReviews();
+    } catch {
+      toast("Failed to delete review", "error");
     }
   };
 
@@ -364,6 +389,45 @@ export default function AdminDashboard() {
                     Delete
                   </button>
                 </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* REVIEWS LIST */}
+      <div>
+        <h3 className="text-lg font-bold mb-4">Reviews</h3>
+
+        {reviews.length === 0 ? (
+          <p className="text-stone-500 dark:text-stone-400 text-sm">No reviews yet.</p>
+        ) : (
+          <div className="space-y-3">
+            {reviews.map((r) => (
+              <div
+                key={r.id}
+                className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800
+                           rounded-xl p-4 flex flex-col sm:flex-row gap-3 sm:items-center
+                           hover:shadow-md transition-all"
+              >
+                <div className="flex-1 min-w-0 space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium text-sm">{r.user_name}</span>
+                    <span className="text-stone-400 dark:text-stone-500">on</span>
+                    <span className="font-medium text-sm text-amber-600 dark:text-amber-400">{r.product_name}</span>
+                  </div>
+                  <StarRating rating={r.rating} />
+                  {r.comment && (
+                    <p className="text-sm text-stone-600 dark:text-stone-400 truncate">{r.comment}</p>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => deleteReview(r.id)}
+                  className="text-red-500 dark:text-red-400 hover:underline text-sm shrink-0"
+                >
+                  Delete
+                </button>
               </div>
             ))}
           </div>
