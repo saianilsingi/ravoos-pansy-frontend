@@ -214,13 +214,26 @@ export default function ProductDetail() {
               {product.description || "No description available."}
             </p>
 
-            <button
-              onClick={handleAddToCart}
-              className="w-full md:w-auto bg-amber-600 dark:bg-amber-500 text-white px-8 py-3 rounded-lg font-semibold
-                         hover:bg-amber-700 dark:hover:bg-amber-400 shadow-md hover:shadow-lg transition-all"
-            >
-              Add to Cart
-            </button>
+            {product.stock === 0 ? (
+              <span className="inline-block bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-4 py-2 rounded-lg text-sm font-semibold">
+                Out of Stock
+              </span>
+            ) : (
+              <>
+                {product.stock <= 5 && (
+                  <p className="text-amber-600 dark:text-amber-400 text-sm font-medium">
+                    Only {product.stock} left in stock
+                  </p>
+                )}
+                <button
+                  onClick={handleAddToCart}
+                  className="w-full md:w-auto bg-amber-600 dark:bg-amber-500 text-white px-8 py-3 rounded-lg font-semibold
+                             hover:bg-amber-700 dark:hover:bg-amber-400 shadow-md hover:shadow-lg transition-all"
+                >
+                  Add to Cart
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

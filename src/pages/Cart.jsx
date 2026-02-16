@@ -41,8 +41,8 @@ export default function Cart() {
         quantity,
       });
       fetchCart();
-    } catch {
-      toast("Failed to update cart", "error");
+    } catch (err) {
+      toast(err.response?.data?.error || "Failed to update cart", "error");
     }
   };
 
@@ -111,6 +111,16 @@ export default function Cart() {
             <div className="flex-1">
               <h4 className="font-medium">{item.product.name}</h4>
               <p className="text-stone-500 dark:text-stone-400">₹{item.product.price}</p>
+              {item.quantity > item.product.stock && item.product.stock > 0 && (
+                <p className="text-red-500 dark:text-red-400 text-xs">
+                  Only {item.product.stock} available
+                </p>
+              )}
+              {item.product.stock === 0 && (
+                <p className="text-red-500 dark:text-red-400 text-xs font-medium">
+                  Out of stock
+                </p>
+              )}
             </div>
 
             <div className="flex items-center gap-3">
@@ -126,8 +136,10 @@ export default function Cart() {
 
               <button
                 onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                disabled={item.quantity >= item.product.stock}
                 className="w-10 h-10 flex items-center justify-center border border-stone-300 dark:border-stone-700
-                           rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+                           rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors
+                           disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 +
               </button>

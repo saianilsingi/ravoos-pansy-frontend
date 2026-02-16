@@ -157,15 +157,24 @@ export default function Items() {
                          hover:shadow-lg hover:border-amber-300 dark:hover:border-amber-700
                          transition-all group"
             >
-              <img
-                src={product.image || FALLBACK_IMAGE}
-                alt={product.name}
-                className="w-full h-40 object-cover bg-stone-100 dark:bg-stone-800"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = FALLBACK_IMAGE;
-                }}
-              />
+              <div className="relative">
+                <img
+                  src={product.image || FALLBACK_IMAGE}
+                  alt={product.name}
+                  className={`w-full h-40 object-cover bg-stone-100 dark:bg-stone-800 ${
+                    product.stock === 0 ? "opacity-50" : ""
+                  }`}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = FALLBACK_IMAGE;
+                  }}
+                />
+                {product.stock === 0 && (
+                  <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded">
+                    Out of Stock
+                  </span>
+                )}
+              </div>
 
               <div className="p-3 space-y-1">
                 <h4 className="font-medium text-sm truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
@@ -179,13 +188,23 @@ export default function Items() {
                   {product.category?.name || "No Category"}
                 </p>
 
-                <button
-                  onClick={(e) => handleAddToCart(e, product.id)}
-                  className="w-full mt-2 bg-amber-600 dark:bg-amber-500 text-white py-2 rounded-lg
-                             text-sm font-medium hover:bg-amber-700 dark:hover:bg-amber-400 transition-colors"
-                >
-                  Add to Cart
-                </button>
+                {product.stock > 0 ? (
+                  <button
+                    onClick={(e) => handleAddToCart(e, product.id)}
+                    className="w-full mt-2 bg-amber-600 dark:bg-amber-500 text-white py-2 rounded-lg
+                               text-sm font-medium hover:bg-amber-700 dark:hover:bg-amber-400 transition-colors"
+                  >
+                    Add to Cart
+                  </button>
+                ) : (
+                  <button
+                    disabled
+                    className="w-full mt-2 bg-stone-300 dark:bg-stone-700 text-stone-500 dark:text-stone-400 py-2 rounded-lg
+                               text-sm font-medium cursor-not-allowed"
+                  >
+                    Out of Stock
+                  </button>
+                )}
               </div>
             </Link>
           ))}
