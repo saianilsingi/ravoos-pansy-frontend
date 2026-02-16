@@ -6,6 +6,7 @@ import { useToast } from "../context/ToastContext";
 import { useCart } from "../context/CartContext";
 import useDebounce from "../hooks/useDebounce";
 import { SkeletonGrid } from "../components/Skeleton";
+import StarRating from "../components/StarRating";
 
 const FALLBACK_IMAGE =
   "https://dummyimage.com/400x300/e0e0e0/555&text=No+Image";
@@ -171,6 +172,9 @@ export default function Items() {
                   {product.name}
                 </h4>
                 <p className="font-semibold">₹{product.price}</p>
+                {Number(product.avg_rating) > 0 && (
+                  <StarRating rating={product.avg_rating} count={product.review_count} size="text-xs" />
+                )}
                 <p className="text-xs text-stone-500 dark:text-stone-400">
                   {product.category?.name || "No Category"}
                 </p>

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../api/axios";
 import { SkeletonGrid } from "../components/Skeleton";
+import StarRating from "../components/StarRating";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -170,6 +171,9 @@ function HorizontalList({ items }) {
             {item.name}
           </h4>
           <p className="text-stone-500 dark:text-stone-400 text-sm">₹{item.price}</p>
+          {Number(item.avg_rating) > 0 && (
+            <StarRating rating={item.avg_rating} count={item.review_count} size="text-xs" />
+          )}
         </Link>
       ))}
     </div>
