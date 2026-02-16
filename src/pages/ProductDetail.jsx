@@ -4,6 +4,7 @@ import api from "../api/axios";
 import { AuthContext } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { useCart } from "../context/CartContext";
+import { useWishlist } from "../context/WishlistContext";
 import StarRating from "../components/StarRating";
 import StarRatingInput from "../components/StarRatingInput";
 import ReviewCard from "../components/ReviewCard";
@@ -20,6 +21,7 @@ export default function ProductDetail() {
   const navigate = useNavigate();
   const toast = useToast();
   const { addToCart } = useCart();
+  const { isWishlisted, toggleWishlist } = useWishlist();
 
   // Review state
   const [reviews, setReviews] = useState([]);
@@ -76,6 +78,21 @@ export default function ProductDetail() {
     }
     const success = await addToCart(product.id);
     toast(success ? "Added to cart!" : "Failed to add to cart", success ? "success" : "error");
+  };
+
+  const handleToggleWishlist = async () => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    if (user.role !== "user") {
+      toast("Admins cannot use wishlist", "error");
+      return;
+    }
+    const result = await toggleWishlist(product.id);
+    if (result === "added") toast("Added to wishlist", "success");
+    else if (result === "removed") toast("Removed from wishlist", "success");
+    else toast("Failed to update wishlist", "error");
   };
 
   const submitReview = async () => {
@@ -194,7 +211,32 @@ export default function ProductDetail() {
 
           {/* INFO */}
           <div className="space-y-4">
-            <h1 className="text-2xl sm:text-3xl font-bold">{product.name}</h1>
+            <div className="flex items-start justify-between gap-3">
+              <h1 className="text-2xl sm:text-3xl font-bold">{product.name}</h1>
+              {user?.role === "user" && (
+                <button
+                  onClick={handleToggleWishlist}
+                  className="mt-1 p-2 rounded-full hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors shrink-0"
+                  aria-label={isWishlisted(product.id) ? "Remove from wishlist" : "Add to wishlist"}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-6 h-6"
+                    viewBox="0 0 24 24"
+                    fill={isWishlisted(product.id) ? "currentColor" : "none"}
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path
+                      d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+                      className={isWishlisted(product.id) ? "text-red-500" : "text-stone-400 dark:text-stone-500"}
+                    />
+                  </svg>
+                </button>
+              )}
+            </div>
 
             <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
               ₹{product.price}

@@ -4,6 +4,7 @@ import api from "../api/axios";
 import { AuthContext } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { useCart } from "../context/CartContext";
+import { useWishlist } from "../context/WishlistContext";
 import useDebounce from "../hooks/useDebounce";
 import { SkeletonGrid } from "../components/Skeleton";
 import StarRating from "../components/StarRating";
@@ -26,6 +27,7 @@ export default function Items() {
   const navigate = useNavigate();
   const toast = useToast();
   const { addToCart } = useCart();
+  const { isWishlisted, toggleWishlist } = useWishlist();
 
   useEffect(() => {
     document.title = "Items | Ravoos Pansy";
@@ -87,6 +89,26 @@ export default function Items() {
 
     const success = await addToCart(productId);
     toast(success ? "Added to cart!" : "Failed to add to cart", success ? "success" : "error");
+  };
+
+  const handleToggleWishlist = async (e, productId) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+
+    if (user.role !== "user") {
+      toast("Admins cannot use wishlist", "error");
+      return;
+    }
+
+    const result = await toggleWishlist(productId);
+    if (result === "added") toast("Added to wishlist", "success");
+    else if (result === "removed") toast("Removed from wishlist", "success");
+    else toast("Failed to update wishlist", "error");
   };
 
   return (
@@ -173,6 +195,30 @@ export default function Items() {
                   <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded">
                     Out of Stock
                   </span>
+                )}
+                {user?.role === "user" && (
+                  <button
+                    onClick={(e) => handleToggleWishlist(e, product.id)}
+                    className="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 dark:bg-stone-800/80 backdrop-blur-sm
+                               hover:bg-white dark:hover:bg-stone-800 transition-colors shadow-sm"
+                    aria-label={isWishlisted(product.id) ? "Remove from wishlist" : "Add to wishlist"}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-4 h-4"
+                      viewBox="0 0 24 24"
+                      fill={isWishlisted(product.id) ? "currentColor" : "none"}
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path
+                        d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+                        className={isWishlisted(product.id) ? "text-red-500" : "text-stone-600 dark:text-stone-300"}
+                      />
+                    </svg>
+                  </button>
                 )}
               </div>
 

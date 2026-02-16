@@ -3,11 +3,13 @@ import { useContext, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { useCart } from "../context/CartContext";
+import { useWishlist } from "../context/WishlistContext";
 
 export default function Navbar() {
   const { user, logout } = useContext(AuthContext);
   const { theme, toggleTheme } = useTheme();
   const { cartCount } = useCart();
+  const { wishlistCount } = useWishlist();
   const [open, setOpen] = useState(false);
 
   const closeMenu = () => setOpen(false);
@@ -32,6 +34,19 @@ export default function Navbar() {
           <Link to="/items" className="hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
             Items
           </Link>
+
+          {user?.role === "user" && (
+            <Link to="/wishlist" className="relative hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+              {wishlistCount > 0 && (
+                <span className="absolute -top-2 -right-4 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                  {wishlistCount > 9 ? "9+" : wishlistCount}
+                </span>
+              )}
+            </Link>
+          )}
 
           {user?.role === "user" && (
             <Link to="/cart" className="relative hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
@@ -114,6 +129,20 @@ export default function Navbar() {
           <Link to="/items" className="block py-2 text-stone-700 dark:text-stone-300" onClick={closeMenu}>
             Items
           </Link>
+
+          {user?.role === "user" && (
+            <Link to="/wishlist" className="py-2 text-stone-700 dark:text-stone-300 flex items-center gap-2" onClick={closeMenu}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+              Wishlist
+              {wishlistCount > 0 && (
+                <span className="bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full inline-flex items-center justify-center">
+                  {wishlistCount > 9 ? "9+" : wishlistCount}
+                </span>
+              )}
+            </Link>
+          )}
 
           {user?.role === "user" && (
             <Link to="/cart" className="py-2 text-stone-700 dark:text-stone-300 flex items-center gap-2" onClick={closeMenu}>
