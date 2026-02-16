@@ -15,6 +15,7 @@ export default function AdminDashboard() {
     price: "",
     category_id: "",
     image: "",
+    stock: "",
   });
 
   // Coupon state
@@ -66,6 +67,7 @@ export default function AdminDashboard() {
         price: Number(form.price),
         category: Number(form.category_id),
         image: form.image,
+        stock: Number(form.stock) || 0,
       };
 
       if (editing) {
@@ -82,6 +84,7 @@ export default function AdminDashboard() {
         price: "",
         category_id: "",
         image: "",
+        stock: "",
       });
       setEditing(null);
       fetchProducts();
@@ -99,6 +102,7 @@ export default function AdminDashboard() {
       price: p.price,
       category_id: p.category?.id || "",
       image: p.image || "",
+      stock: p.stock ?? 0,
     });
   };
 
@@ -212,6 +216,7 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <input name="name" placeholder="Product name" value={form.name} onChange={handleChange} className={inputClass} />
           <input name="price" placeholder="Price" value={form.price} onChange={handleChange} className={inputClass} />
+          <input name="stock" type="number" placeholder="Stock quantity" value={form.stock} onChange={handleChange} className={inputClass} min="0" />
           <input name="image" placeholder="Image URL" value={form.image} onChange={handleChange} className={`${inputClass} md:col-span-2`} />
           <textarea name="description" placeholder="Description" value={form.description} onChange={handleChange} className={`${inputClass} md:col-span-2`} />
           <select name="category_id" value={form.category_id} onChange={handleChange} className={inputClass}>
@@ -235,7 +240,7 @@ export default function AdminDashboard() {
             <button
               onClick={() => {
                 setEditing(null);
-                setForm({ name: "", description: "", price: "", category_id: "", image: "" });
+                setForm({ name: "", description: "", price: "", category_id: "", image: "", stock: "" });
               }}
               className="border border-stone-300 dark:border-stone-700 px-6 py-2 rounded-lg
                          hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
@@ -269,6 +274,15 @@ export default function AdminDashboard() {
                 <p className="font-semibold">₹{p.price}</p>
                 <p className="text-sm text-stone-500 dark:text-stone-400">
                   {p.category?.name || "No Category"}
+                </p>
+                <p className={`text-xs font-medium ${
+                  p.stock === 0
+                    ? "text-red-500 dark:text-red-400"
+                    : p.stock <= 5
+                      ? "text-amber-600 dark:text-amber-400"
+                      : "text-stone-500 dark:text-stone-400"
+                }`}>
+                  {p.stock === 0 ? "Out of Stock" : `Stock: ${p.stock}`}
                 </p>
               </div>
 
