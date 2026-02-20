@@ -11,7 +11,13 @@ const Cart = lazy(() => import("./pages/Cart"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const Orders = lazy(() => import("./pages/Orders"));
-const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AdminLayout = lazy(() => import("./admin/AdminLayout"));
+const AdminOverview = lazy(() => import("./admin/pages/AdminOverview"));
+const AdminProducts = lazy(() => import("./admin/pages/AdminProducts"));
+const AdminCategories = lazy(() => import("./admin/pages/AdminCategories"));
+const AdminOrders = lazy(() => import("./admin/pages/AdminOrders"));
+const AdminCoupons = lazy(() => import("./admin/pages/AdminCoupons"));
+const AdminReviews = lazy(() => import("./admin/pages/AdminReviews"));
 const Login = lazy(() => import("./pages/Login"));
 const Signup = lazy(() => import("./pages/Signup"));
 const Wishlist = lazy(() => import("./pages/Wishlist"));
@@ -33,6 +39,7 @@ export default function App() {
           {/* Public pages */}
           <Route path="/" element={<Layout><Home /></Layout>} />
           <Route path="/items" element={<Layout><Items /></Layout>} />
+          <Route path="/items/c/*" element={<Layout><Items /></Layout>} />
           <Route path="/items/:id" element={<Layout><ProductDetail /></Layout>} />
           <Route path="/profile" element={<Layout><Profile /></Layout>} />
 
@@ -43,7 +50,14 @@ export default function App() {
           <Route path="/orders" element={<UserOnlyRoute><Layout><Orders /></Layout></UserOnlyRoute>} />
 
           {/* Admin-only */}
-          <Route path="/admin-panel" element={<AdminRoute><Layout><AdminDashboard /></Layout></AdminRoute>} />
+          <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+            <Route index element={<AdminOverview />} />
+            <Route path="products" element={<AdminProducts />} />
+            <Route path="categories" element={<AdminCategories />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="coupons" element={<AdminCoupons />} />
+            <Route path="reviews" element={<AdminReviews />} />
+          </Route>
 
           {/* Auth pages (no layout) */}
           <Route path="/login" element={<Login />} />
