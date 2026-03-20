@@ -190,12 +190,33 @@ export default function ProductDetail() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-10">
       <div>
-        <Link
-          to="/items"
-          className="text-amber-600 dark:text-amber-400 hover:underline text-sm font-medium"
-        >
-          ← Back to Items
-        </Link>
+        <nav className="flex items-center gap-1 text-sm flex-wrap">
+          <Link
+            to="/items"
+            className="text-amber-600 dark:text-amber-400 hover:underline"
+          >
+            All Items
+          </Link>
+          {product.category?.breadcrumb?.map((crumb, i) => {
+            const path = product.category.breadcrumb
+              .slice(0, i + 1)
+              .map((c) => c.slug)
+              .join("/");
+            return (
+              <span key={crumb.id} className="flex items-center gap-1">
+                <span className="text-stone-400 dark:text-stone-500">/</span>
+                <Link
+                  to={`/items/c/${path}`}
+                  className="text-amber-600 dark:text-amber-400 hover:underline"
+                >
+                  {crumb.name}
+                </Link>
+              </span>
+            );
+          })}
+          <span className="text-stone-400 dark:text-stone-500">/</span>
+          <span className="text-stone-600 dark:text-stone-400">{product.name}</span>
+        </nav>
 
         <div className="mt-6 grid md:grid-cols-2 gap-6 md:gap-8">
           {/* IMAGE */}
@@ -249,7 +270,9 @@ export default function ProductDetail() {
             />
 
             <p className="text-sm text-stone-500 dark:text-stone-400">
-              {product.category?.name || "No Category"}
+              {product.category?.breadcrumb
+                ? product.category.breadcrumb.map((c) => c.name).join(" > ")
+                : product.category?.name || "No Category"}
             </p>
 
             <p className="text-stone-700 dark:text-stone-300">

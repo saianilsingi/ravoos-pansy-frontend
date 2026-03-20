@@ -60,7 +60,7 @@ export default function Navbar() {
           )}
 
           {user?.role === "admin" && (
-            <Link to="/admin-panel" className="hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+            <Link to="/admin" className="hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
               Admin
             </Link>
           )}
@@ -155,7 +155,7 @@ export default function Navbar() {
             </Link>
           )}
           {user?.role === "admin" && (
-            <Link to="/admin-panel" className="block py-2 text-stone-700 dark:text-stone-300" onClick={closeMenu}>
+            <Link to="/admin" className="block py-2 text-stone-700 dark:text-stone-300" onClick={closeMenu}>
               Admin
             </Link>
           )}
